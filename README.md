@@ -1,10 +1,12 @@
 # Requirements
 
 * System with the following applications installed:
-    * minikube
-    * istioctl
-    * tkn
-    * virtual machine (this example will use VirtualBox)
+    * minikube - v1.25.2 used
+    * istioctl - 1.14.0 used
+    * tkn - 0.19.1 used
+    * virtual machine (this example will use VirtualBox - 6.1.34 r150636)
+
+The deployment was tested on Arch Linux
 
 # Setup
 
@@ -75,7 +77,7 @@ Change directories:
 cd blue-green-app
 ```
 
-### Deploy the Secret
+### Apply the Secret
 Create a `secrets.yaml` file based on `tekton/secrets.example.yaml` by replacing `username` and `password`. This example is using `DockerHub`, if you are using another registry, changing `tekton.dev/docker-0` annotation and authentication `type` might be necessary.
 
 ```
@@ -89,10 +91,14 @@ kubectl apply -f tekton/
 ```
 
 ### Configure App and Pipeline
-You can go to `app/index.html` and change the `--color` attribute to css color names (red, green, blue, etc.)
 
+Change `pipeline_run.yaml` `TAG` param to v1 or v2, those will be our image versions and our deployment versions
 
-Change `pipeline_run.yaml` version to v2. You maight also want to change the weights
+The `REPOSITORY` and `BRANCH` params points to the [blue-green-app repo](https://github.com/dokawa/blue-green-app.git) that has an `html` page that shows a box with different colors. There are already branches with different colors, master has `blue`; `red` and `green` branches have apps with respective color
+
+You can also fork the repo and go to `app/index.html` and change the `--color` attribute to css color names (red, green, blue, etc.). You would also need to change `REPOSITORY` and `BRANCH` parameters accordingly
+
+Still on `pipeline_run.yaml`, you might also want to change the weights and the registry path that the image will be uploaded to
 
 ### Deploy the App
 
@@ -118,9 +124,9 @@ export INGRESS_HOST=$(kubectl get po -l istio=ingressgateway -n istio-system -o 
 echo $INGRESS_HOST:$INGRESS_PORT
 ```
 
-Visit the output url and you should see the app
+Visit the output url on your browser and you should see the app
 
-There is also a utility script on the repo that can be run with:
+There is also a utility script on the repo that can avoid having to do browser refreshes:
 
 ```
 ./requests.sh [http://]<ip>:<port>
