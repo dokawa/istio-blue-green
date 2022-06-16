@@ -12,14 +12,13 @@ The deployment was tested on Arch Linux
 
 Start minikube with (adapt to best suit your machine config):
 
-
-## Kubernetes Apps Installation
-
 ```
 minikube start --memory=16384 --cpus=8 --vm-driver=virtualbox 
 ```
 
-### Install tekton:
+## Kubernetes Apps Installation
+
+### Install Tekton
 
 Install Tekton pipelines:
 
@@ -39,7 +38,7 @@ tkn hub install task kubernetes-actions --version 0.2
 kubectl apply --filename https://storage.googleapis.com/tekton-releases/dashboard/latest/tekton-dashboard-release.yaml
 ```
 
-### Install Istio:
+### Install Istio
 
 ```
 istioctl install --set profile=demo -y
@@ -50,7 +49,13 @@ Enable istio automatic injection
 kubectl label namespace default istio-injection=enabled
 ```
 
-Install Kiali:
+### Install Prometheus
+
+```
+kubectl apply --filename https://raw.githubusercontent.com/istio/istio/release-1.14/samples/addons/prometheus.yaml
+```
+
+### Install Kiali
 
 ```
 kubectl apply --filename https://raw.githubusercontent.com/istio/istio/release-1.14/samples/addons/kiali.yaml
@@ -60,21 +65,16 @@ You can check deployment status with:
 kubectl rollout status deployment/kiali -n istio-system
 ```
 
-Install Prometheus:
-
-```
-kubectl apply --filename https://raw.githubusercontent.com/istio/istio/release-1.14/samples/addons/prometheus.yaml
-```
 
 ## App Setup
 
 Clone this repo:
 ```
-git clone https://github.com/dokawa/blue-green-app.git
+git clone https://github.com/dokawa/istio-blue-green.git
 ```
 Change directories:
 ```
-cd blue-green-app
+cd istio-blue-green
 ```
 
 ### Apply the Secret
@@ -96,7 +96,7 @@ Change `pipeline_run.yaml` `TAG` param to v1 or v2, those will be our image vers
 
 The `REPOSITORY` and `BRANCH` params points to the [blue-green-app repo](https://github.com/dokawa/blue-green-app.git) that has an `html` page that shows a box with different colors. There are already branches with different colors, master has `blue`; `red` and `green` branches have apps with respective color
 
-You can also fork the repo and go to `app/index.html` and change the `--color` attribute to css color names (red, green, blue, etc.). You would also need to change `REPOSITORY` and `BRANCH` parameters accordingly
+[Optional] You can also fork the repo and go to `app/index.html` and change the `--color` attribute to css color names (red, green, blue, etc.). You would also need to change `REPOSITORY` and `BRANCH` parameters accordingly
 
 Still on `pipeline_run.yaml`, you might also want to change the weights and the registry path that the image will be uploaded to
 
@@ -107,7 +107,7 @@ Run:
 ```
 kubectl create -f pipeline_run.yaml
 ```
-This command will trigger the pipeline that will clone the repo, build and push the container and deploy it to the cluster as specified in `pipeline.yaml`
+This command will create a tekton `pipelinerun` that will clone the repo, build and push the container and deploy it to the cluster as specified in `pipeline.yaml`
 
 If you installed Tekton Dashboard, you can check the pipeline running:
 
