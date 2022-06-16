@@ -1,0 +1,89 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: deploy
+spec:
+  params:
+    - name: REPOSITORY
+    - name: BRANCH
+    - name: IMAGE
+    - name: TAG
+    - name: DEPLOYMENT_NAMESPACE
+    - name: NEXT_WEIGHT
+    - name: CURRENT_WEIGHT
+  workspaces:
+    - name: shared-workspace
+  tasks:
+
+
+    - name: clone-repository
+      taskRef:
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+      params:
+        - name: url
+          value: $(params.REPOSITORY)
+        - name: subdirectory
+          value: ""
+        - name: revision
+          value: $(params.BRANCH)
+        - name: deleteExisting
+          value: "true"
+
+
+    - name: build-push-image
+      taskRef:
+        name: buildah
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: IMAGE
+          value: $(params.IMAGE):$(params.TAG)
+        - name: CONTEXT
+          value: ""
+        - name: FORMAT
+          value: "docker"
+      runAfter:
+        - "clone-repository"
+
+
+    - name: deploy-app
+      taskRef:
+        name: deploy-task
+      params:
+        - name: DEPLOY_DIR
+          value: .
+        - name: VERSION
+          value: $(params.TAG)
+      runAfter:
+        - build-push-image
+      workspaces:
+        - name: working-dir
+          workspace: shared-workspace
+
+
+    - name: blue-green-deploy
+      taskRef:
+        name: istio-canary
+      params:
+        - name: VIRTUAL_SERVICE_NAME
+          value: blue-green-virtual-service
+        - name: APP_NAME
+          value: blue-green-app
+        - name: NEXT_WEIGHT
+          value: $(params.NEXT_WEIGHT)
+        - name: CURRENT_WEIGHT
+          value: $(params.CURRENT_WEIGHT)
+        - name: GATEWAY_NAME
+          value: blue-green-gateway
+      runAfter:
+        - deploy-app
+      workspaces:
+        - name: istio-manifest-dir
+          workspace: shared-workspace
+        
+      
+

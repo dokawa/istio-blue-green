@@ -1,0 +1,21 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: blue-green-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blue-green-app
+  template:
+    metadata:
+      labels:
+        app: blue-green-app
+    spec:
+      containers:
+        - name: blue-green-app
+          image: deltael/blue-green-app
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+      restartPolicy: Always
